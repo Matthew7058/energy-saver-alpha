@@ -190,6 +190,15 @@
       font-size: 1rem;
     }
 
+    .control select {
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      font-size: 1rem;
+    }
+
     .control-value {
       font-size: 0.9rem;
       color: var(--muted);
@@ -454,6 +463,16 @@
         <h2>Inputs</h2>
         <div class="controls">
           <div class="control">
+            <label for="site">Site location</label>
+            <select id="site" data-field="site">
+              <option value="manchester">Manchester</option>
+              <option value="milton-keynes">Milton Keynes</option>
+              <option value="london">London</option>
+              <option value="glasgow">Glasgow</option>
+            </select>
+            <div class="control-value" data-field-display="site"></div>
+          </div>
+          <div class="control">
             <label for="panelCount">Number of panels</label>
             <input type="range" id="panelCount" min="4" max="500" value="10" step="1" data-field="panelCount">
             <div class="control-value" data-field-display="panelCount"></div>
@@ -526,6 +545,13 @@
       bool: (v) => (v ? 'Yes' : 'No')
     };
 
+    const siteLabels = {
+      manchester: 'Manchester',
+      'milton-keynes': 'Milton Keynes',
+      london: 'London',
+      glasgow: 'Glasgow'
+    };
+
     const PANEL_WATTS = 400; // W per panel assumption
 
     const taglines = [
@@ -543,6 +569,7 @@
     ];
 
     const state = {
+      site: 'manchester',
       panelCount: 10,
       importRate: 0.28,
       maintenancePerKWp: 18,
@@ -551,6 +578,7 @@
     };
 
     const queryKeys = {
+      site: 'site',
       importRate: 'importRate',
       maintenancePerKWp: 'maintenancePerKWp',
       installPerKWp: 'installPerKWp',
@@ -583,6 +611,7 @@
 
     function formatControlValue(field, value) {
       switch (field) {
+        case 'site': return `${siteLabels[value] || value} climate profile`;
         case 'panelCount': {
           const kwp = panelsToKWp(value);
           return `${value} panels • ${kwp.toFixed(2)} kWp`;
@@ -605,8 +634,9 @@
     function handleInput(evt) {
       const field = evt.target.dataset.field;
       if (!field) return;
-      const value = Number(evt.target.value);
-      if (Number.isFinite(value)) {
+      const isNumeric = evt.target.type === 'range' || evt.target.type === 'number';
+      const value = isNumeric ? Number(evt.target.value) : evt.target.value;
+      if (!isNumeric || Number.isFinite(value)) {
         state[field] = value;
         syncControlDisplays();
       }
@@ -666,7 +696,9 @@
         return;
       }
 
+      const siteLabel = story.siteLabel || siteLabels[story.siteKey] || 'Selected site';
       const highlightData = [
+        { label: 'Site', value: siteLabel, desc: 'Climate profile driving the solar resource.' },
         { label: 'Latitude', value: `${story.latitudeDeg.toFixed(1)}°N`, desc: 'Sets seasonal solar angle.' },
         { label: 'Panel tilt', value: `${story.tiltDeg}°`, desc: 'Optimised for the site latitude.' },
         { label: 'Annual GHI', value: formatIrradiance(story.annualGHIkWhm2), desc: 'Irradiance on a flat surface.' },
@@ -709,7 +741,7 @@
       }).join('');
 
       const brightest = monthly.reduce((best, m) => (m.ghiMonthly > best.ghiMonthly ? m : best), monthly[0]);
-      storyCaptionEl.textContent = `${brightest.monthLabel} shows the strongest resource at ${formatIrradiance(brightest.ghiMonthly)} with sunsets around ${brightest.sunsetHourAngleDeg}°. Green indicates direct beam; blue shows diffuse contribution.`;
+      storyCaptionEl.textContent = `${siteLabel}: ${brightest.monthLabel} shows the strongest resource at ${formatIrradiance(brightest.ghiMonthly)} with sunsets around ${brightest.sunsetHourAngleDeg}°. Green indicates direct beam; blue shows diffuse contribution.`;
     }
 
     async function fetchEstimateData(query) {
@@ -747,7 +779,8 @@
         });
         renderSummary(data);
         renderSolarStory(data.solarStory);
-        statusEl.textContent = `Site profile: ${data.companyLoadProfile?.name || 'Not specified'} • Demand cap applied: ${formatters.bool(data.demandCapApplied)}`;
+        const siteLabel = data.siteLabel || siteLabels[data.siteKey] || 'Selected site';
+        statusEl.textContent = `${siteLabel} climate • ${data.companyLoadProfile?.name || 'Load not specified'} • Demand cap applied: ${formatters.bool(data.demandCapApplied)}`;
       } catch (err) {
         console.error('Failed to load /estimate', err);
         const hint = err && err.message ? err.message : 'Unknown browser error';

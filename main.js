@@ -54,25 +54,70 @@ const ASSETS_DIR = path.join(__dirname, 'assets');
 // ----------------------------
 // 1) Defaults (edit here or override via query params)
 // ----------------------------
-const defaults = {
-  // Site & array
-  latDeg: 53.4,   // Manchester-ish
+const climateProfiles = {
+  manchester: {
+    key: 'manchester',
+    label: 'Manchester',
+    latDeg: 53.4,
+    GHI_daily: [0.8, 1.5, 2.6, 3.6, 4.6, 4.9, 4.8, 4.3, 3.1, 2.1, 1.0, 0.7],
+    DHI_daily: [0.6, 0.9, 1.2, 1.5, 1.6, 1.6, 1.6, 1.4, 1.2, 0.9, 0.6, 0.5]
+  },
+  'milton-keynes': {
+    key: 'milton-keynes',
+    label: 'Milton Keynes',
+    latDeg: 52.0,
+    GHI_daily: [0.9, 1.6, 2.7, 3.7, 4.7, 5.0, 4.9, 4.4, 3.2, 2.2, 1.1, 0.8],
+    DHI_daily: [0.65, 1.0, 1.35, 1.6, 1.7, 1.7, 1.7, 1.5, 1.3, 1.0, 0.7, 0.55]
+  },
+  london: {
+    key: 'london',
+    label: 'London',
+    latDeg: 51.5,
+    GHI_daily: [1.0, 1.7, 2.8, 3.9, 4.9, 5.2, 5.1, 4.8, 3.5, 2.4, 1.3, 0.9],
+    DHI_daily: [0.7, 1.05, 1.45, 1.7, 1.8, 1.8, 1.75, 1.6, 1.35, 1.05, 0.75, 0.6]
+  },
+  glasgow: {
+    key: 'glasgow',
+    label: 'Glasgow',
+    latDeg: 55.9,
+    GHI_daily: [0.6, 1.2, 2.0, 3.0, 3.9, 4.2, 4.1, 3.6, 2.6, 1.7, 0.8, 0.5],
+    DHI_daily: [0.5, 0.8, 1.1, 1.3, 1.4, 1.4, 1.35, 1.2, 1.0, 0.8, 0.55, 0.4]
+  }
+};
+
+const DEFAULT_SITE_KEY = 'manchester';
+
+const baseAssumptions = {
   tiltDeg: 35,    // roof tilt from horizontal
   arrayKWp: 4.0,  // kWp size (override for business-scale)
   albedo: 0.20,   // fixed ground reflectivity (kept simple)
   PR: 0.86,       // performance ratio (~14% losses)
-
-  // Tariff & demand
   importRateGBPperKWh: 0.28, // £/kWh avoided
-  // Standing Charge??
   annualElecDemandKWh: companyElectricityProfile.annualConsumptionKWh, // assume we offset this load
   maintenanceGBPperKWp: costAssumptions.maintenanceGBPperKWp,
-  installGBPperKWp: costAssumptions.installGBPperKWp,
-
-  // Monthly climate data (kWh/m^2/day). Replace with NASA POWER later.
-  GHI_daily: [0.8, 1.5, 2.6, 3.6, 4.6, 4.9, 4.8, 4.3, 3.1, 2.1, 1.0, 0.7], // Radiation straight from sun
-  DHI_daily: [0.6, 0.9, 1.2, 1.5, 1.6, 1.6, 1.6, 1.4, 1.2, 0.9, 0.6, 0.5] // Radiation scattered by atmosphere
+  installGBPperKWp: costAssumptions.installGBPperKWp
 };
+
+const normalizeSiteKey = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, '-');
+
+function resolveSiteKey(raw) {
+  const key = normalizeSiteKey(raw);
+  return climateProfiles[key] ? key : DEFAULT_SITE_KEY;
+}
+
+function buildConfigForSite(siteKey = DEFAULT_SITE_KEY) {
+  const profile = climateProfiles[resolveSiteKey(siteKey)] || climateProfiles[DEFAULT_SITE_KEY];
+  return {
+    ...baseAssumptions,
+    latDeg: profile.latDeg,
+    GHI_daily: [...profile.GHI_daily],
+    DHI_daily: [...profile.DHI_daily],
+    siteKey: profile.key,
+    siteLabel: profile.label
+  };
+}
+
+const defaults = buildConfigForSite();
 
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const MID_DOY = [15, 46, 74, 105, 135, 166, 196, 227, 258, 288, 319, 349]; // Middle Day of the Month in day of year
@@ -166,6 +211,8 @@ function estimateAnnualSavingsNoExport(cfg /*All the default values (defaults*/)
     ? monthlySolarDetails.reduce((sum, m) => sum + m.sunsetHourAngleDeg, 0) / monthlySolarDetails.length
     : 0;
   const solarStory = {
+    siteKey: cfg.siteKey,
+    siteLabel: cfg.siteLabel,
     latitudeDeg: cfg.latDeg,
     tiltDeg: cfg.tiltDeg,
     azimuthDeg: 0,
@@ -183,6 +230,8 @@ function estimateAnnualSavingsNoExport(cfg /*All the default values (defaults*/)
   };
 
   return {
+    siteKey: cfg.siteKey,
+    siteLabel: cfg.siteLabel,
     inputsUsed: {
       arrayKWp: cfg.arrayKWp,
       tiltDeg: cfg.tiltDeg,
@@ -191,7 +240,9 @@ function estimateAnnualSavingsNoExport(cfg /*All the default values (defaults*/)
       importRateGBPperKWh: cfg.importRateGBPperKWh,
       annualElecDemandKWh: (cfg.annualElecDemandKWh == null ? 'assumed large (no cap)' : cfg.annualElecDemandKWh),
       maintenanceGBPperKWp: cfg.maintenanceGBPperKWp,
-      installGBPperKWp: cfg.installGBPperKWp
+      installGBPperKWp: cfg.installGBPperKWp,
+      siteKey: cfg.siteKey,
+      siteLabel: cfg.siteLabel
     },
     pvAnnualKWh: round(pvAnnualKWh, 0),
     selfUseKWh: round(selfUseKWh, 0),
@@ -275,8 +326,9 @@ const server = http.createServer((req, res) => {
     if (process.env.NODE_ENV !== 'test') {
       console.log('[estimate]', { query: url.search, origin: req.headers.origin || 'same-origin' });
     }
-    const cfg = { ...defaults };
     const q = url.searchParams;
+    const siteKey = resolveSiteKey(q.get('site'));
+    const cfg = buildConfigForSite(siteKey);
 
     const num = (k) => (q.has(k) ? Number(q.get(k)) : undefined);
     const setNum = (param, key) => { const v = num(param); if (v !== undefined && !Number.isNaN(v)) cfg[key] = v; };
@@ -307,9 +359,9 @@ const server = http.createServer((req, res) => {
     `GET / -> silly dashboard hitting /estimate\n` +
     `GET /estimate -> JSON with pvAnnualKWh, selfUseKWh, and annualSavingsGBP.
 ` +
-    `Query overrides: arrayKWp, panelCount, panelWatt (W), tiltDeg, importRate, demand
+    `Query overrides: site, arrayKWp, panelCount, panelWatt (W), tiltDeg, importRate, demand
 ` +
-    `Example: /estimate?panelCount=250&panelWatt=400&tiltDeg=20&importRate=0.24&demand=250000`;
+    `Example: /estimate?site=london&panelCount=250&panelWatt=400&tiltDeg=20&importRate=0.24&demand=250000`;
 
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end(help);
@@ -326,5 +378,7 @@ module.exports = {
   estimateAnnualSavingsNoExport,
   defaults,
   companyElectricityProfile,
-  costAssumptions
+  costAssumptions,
+  climateProfiles,
+  buildConfigForSite
 };
