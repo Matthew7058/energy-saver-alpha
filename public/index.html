@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Energy Savings Planner</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b162a;
+      --surface: #101d34;
+      --surface-muted: #0d1a2f;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #e9eef5;
+      --muted: #b7c2d4;
+      --accent: #5cd3a8;
+      --accent-2: #3a7bd5;
+      font-family: 'Manrope', 'DM Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(58, 132, 255, 0.14), transparent 32%),
+        radial-gradient(circle at 80% 0%, rgba(92, 211, 168, 0.12), transparent 28%),
+        linear-gradient(135deg, #0b162a 0%, #0f1f3a 100%);
+      color: var(--text);
+    }
+
+    .app-shell {
+      width: min(100%, 1100px);
+      background: var(--surface);
+      padding: 36px clamp(18px, 4vw, 44px);
+      border-radius: 28px;
+      box-shadow: 0 25px 90px rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+
+    .intro {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 26px;
+    }
+
+    .brand-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .logo-wrap {
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .logo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .brand-meta {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .brand-meta strong {
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: clamp(2.3rem, 6vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title span { color: var(--accent); }
+
+    .tagline {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .logline { margin: 0; color: rgba(233, 238, 245, 0.8); font-size: 1rem; }
+
+    #logline { margin-bottom: 8px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.3fr);
+      gap: 28px;
+      margin-top: 12px;
+    }
+
+    .panel {
+      border-radius: 20px;
+      padding: 22px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+    }
+
+    .panel h2 {
+      margin: 0 0 16px;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+    }
+
+    .controls {
+      display: grid;
+      gap: 18px;
+    }
+
+    .control {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .control label {
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .control input[type="range"] {
+      width: 100%;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      height: 8px;
+    }
+
+    .control input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: 2px solid #0d172b;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    .control input[type="range"]::-moz-range-thumb {
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: 2px solid #0d172b;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    .control input[type="number"] {
+      height: auto;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .control-value {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    button {
+      flex: 1;
+      min-width: 180px;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1427;
+      box-shadow: 0 12px 30px rgba(58, 132, 255, 0.25);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button:not(:disabled):hover { transform: translateY(-1px); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      padding: 20px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      text-align: left;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .card-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+
+    .card-value {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: #f8f7ff;
+      word-break: break-word;
+    }
+
+    #status {
+      margin-top: 12px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    #summary {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .note {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      button { flex: 1 1 100%; }
+    }
+
+    .story-panel {
+      margin-top: 32px;
+      padding: 28px 24px;
+      border-radius: 24px;
+      background: rgba(8, 14, 28, 0.9);
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .story-panel h2 {
+      margin: 0 0 10px;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+
+    .story-panel p {
+      margin: 0 0 14px;
+      color: rgba(233, 238, 245, 0.8);
+    }
+
+    .story-highlights {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .story-highlight {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      min-height: 120px;
+    }
+
+    .story-highlight h3 {
+      margin: 0;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+    }
+
+    .story-highlight strong {
+      display: block;
+      font-size: 1.4rem;
+      margin-top: 6px;
+      color: var(--accent);
+    }
+
+    .story-highlight span {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: rgba(233, 238, 245, 0.78);
+    }
+
+    .story-chart {
+      margin-top: 26px;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      min-height: 200px;
+    }
+
+    .month-bar {
+      flex: 1;
+      text-align: center;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .bar-stack {
+      height: 170px;
+      border-radius: 12px 12px 4px 4px;
+      background: rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      position: relative;
+    }
+
+    .bar-segment {
+      width: 100%;
+    }
+
+    .bar-segment.diffuse {
+      background: rgba(76, 201, 240, 0.8);
+    }
+
+    .bar-segment.beam {
+      background: rgba(92, 211, 168, 0.95);
+    }
+
+    .story-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      align-items: center;
+      font-size: 0.85rem;
+      margin-top: 12px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .legend-dot.beam {
+      background: rgba(92, 211, 168, 0.95);
+    }
+
+    .legend-dot.diffuse {
+      background: rgba(76, 201, 240, 0.8);
+    }
+
+    #story-caption {
+      margin-top: 18px;
+      font-size: 0.95rem;
+      color: rgba(233, 238, 245, 0.85);
+    }
+
+    .sunset-angle {
+      font-size: 0.7rem;
+      color: rgba(233, 238, 245, 0.6);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="brand-bar">
+      <div class="logo-wrap">
+        <img src="/assets/network-rail-logo.jpg" alt="Network Rail logo">
+      </div>
+      <div class="brand-meta">
+        <strong>Network Rail</strong>
+        <span>Energy savings planner</span>
+      </div>
+    </div>
+    <div class="intro">
+      <h1 class="hero-title">Energy Savings <span>Planner</span></h1>
+      <p class="tagline">Model solar production, cost, and payback with clear inputs.</p>
+      <p id="logline" class="logline">Ready when you are. Adjust the inputs and run a scenario.</p>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <h2>Inputs</h2>
+        <div class="controls">
+          <div class="control">
+            <label for="panelCount">Number of panels</label>
+            <input type="range" id="panelCount" min="4" max="500" value="10" step="1" data-field="panelCount">
+            <div class="control-value" data-field-display="panelCount"></div>
+          </div>
+          <div class="control">
+            <label for="importRate">Import Rate (£/kWh)</label>
+            <input type="range" id="importRate" min="0.15" max="0.5" step="0.005" value="0.28" data-field="importRate">
+            <div class="control-value" data-field-display="importRate"></div>
+          </div>
+          <div class="control">
+            <label for="maintenancePerKWp">Maintenance (£/kWp/yr)</label>
+            <input type="range" id="maintenancePerKWp" min="0" max="40" step="1" value="18" data-field="maintenancePerKWp">
+            <div class="control-value" data-field-display="maintenancePerKWp"></div>
+          </div>
+          <div class="control">
+            <label for="installPerKWp">Install Cost (£/kWp)</label>
+            <input type="range" id="installPerKWp" min="500" max="2000" step="25" value="1050" data-field="installPerKWp">
+            <div class="control-value" data-field-display="installPerKWp"></div>
+          </div>
+          <div class="control">
+            <label for="demand">Annual Demand Cap (kWh)</label>
+            <input type="number" id="demand" min="1000" step="1000" value="424000" data-field="demand">
+            <div class="control-value" data-field-display="demand"></div>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="action-btn" class="btn-primary">Calculate Impact</button>
+          <button id="random-btn" class="btn-ghost">Randomise Inputs</button>
+        </div>
+        <p class="note">Assumes 400 W per panel (0.4 kWp) to calculate system size.</p>
+      </section>
+
+      <section class="panel">
+        <h2>Financial Snapshot</h2>
+        <div class="grid" id="data-grid"></div>
+        <div id="status">Run a calculation to see projected returns.</div>
+        <div id="summary"></div>
+      </section>
+    </div>
+
+    <section class="story-panel">
+      <h2>Solar Resource Overview</h2>
+      <p>Understand the solar profile at the site: insolation, tilt, and how monthly conditions shape annual output.</p>
+      <div class="story-highlights" id="story-highlights"></div>
+      <div class="story-legend">
+        <span class="legend-item"><span class="legend-dot beam"></span>Direct sunlight (beam)</span>
+        <span class="legend-item"><span class="legend-dot diffuse"></span>Sky glow (diffuse)</span>
+      </div>
+      <div class="story-chart" id="story-chart"></div>
+      <p id="story-caption"></p>
+    </section>
+  </div>
+
+  <script>
+    const grid = document.getElementById('data-grid');
+    const statusEl = document.getElementById('status');
+    const summaryEl = document.getElementById('summary');
+    const actionBtn = document.getElementById('action-btn');
+    const randomBtn = document.getElementById('random-btn');
+    const loglineEl = document.getElementById('logline');
+    const storyHighlightsEl = document.getElementById('story-highlights');
+    const storyChartEl = document.getElementById('story-chart');
+    const storyCaptionEl = document.getElementById('story-caption');
+
+    const nfEnergy = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 });
+    const nfCurrency = new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' });
+    const formatters = {
+      energy: (v) => nfEnergy.format(v),
+      currency: (v) => nfCurrency.format(v),
+      bool: (v) => (v ? 'Yes' : 'No')
+    };
+
+    const PANEL_WATTS = 400; // W per panel assumption
+
+    const taglines = [
+      'Quick scenario testing with site-ready outputs.'
+    ];
+
+    const fields = [
+      { key: 'pvAnnualKWh', label: 'PV Output', format: 'energy', suffix: ' kWh/yr' },
+      { key: 'selfUseKWh', label: 'Self-Used Energy', format: 'energy', suffix: ' kWh/yr' },
+      { key: 'avoidedImportGBP', label: 'Avoided Grid Spend', format: 'currency' },
+      { key: 'annualMaintenanceGBP', label: 'Maintenance', format: 'currency' },
+      { key: 'annualSavingsGBP', label: 'Net Annual Saving', format: 'currency' },
+      { key: 'estimatedInstallCostGBP', label: 'Install Cost (est.)', format: 'currency' },
+      { key: 'demandCapApplied', label: 'Capped by Demand?', format: 'bool' }
+    ];
+
+    const state = {
+      panelCount: 10,
+      importRate: 0.28,
+      maintenancePerKWp: 18,
+      installPerKWp: 1050,
+      demand: 424000
+    };
+
+    const queryKeys = {
+      importRate: 'importRate',
+      maintenancePerKWp: 'maintenancePerKWp',
+      installPerKWp: 'installPerKWp',
+      demand: 'demand'
+    };
+
+    function panelsToKWp(panels, panelWatts = PANEL_WATTS) {
+      return (panels * panelWatts) / 1000;
+    }
+
+    function buildApiTargets() {
+      const bases = [];
+      if (window.location.protocol !== 'file:') {
+        bases.push('');
+      }
+      bases.push('http://localhost:3000', 'http://127.0.0.1:3000');
+      return bases;
+    }
+
+    function buildEstimateURL(base, query) {
+      const cleanBase = base.replace(/\/$/, '');
+      const prefix = cleanBase ? `${cleanBase}/estimate` : '/estimate';
+      return `${prefix}${query ? `?${query}` : ''}`;
+    }
+
+    function cycleTagline() {
+      const line = taglines[Math.floor(Math.random() * taglines.length)];
+      loglineEl.textContent = line;
+    }
+
+    function formatControlValue(field, value) {
+      switch (field) {
+        case 'panelCount': {
+          const kwp = panelsToKWp(value);
+          return `${value} panels • ${kwp.toFixed(2)} kWp`;
+        }
+        case 'importRate': return `${formatters.currency(value)} per kWh`;
+        case 'maintenancePerKWp': return `${formatters.currency(value)} / kWp / yr`;
+        case 'installPerKWp': return `${formatters.currency(value)} per kWp installed`;
+        case 'demand': return `${new Intl.NumberFormat('en-GB').format(value)} kWh cap`;
+        default: return value;
+      }
+    }
+
+    function syncControlDisplays() {
+      document.querySelectorAll('[data-field-display]').forEach((el) => {
+        const field = el.getAttribute('data-field-display');
+        el.textContent = formatControlValue(field, state[field]);
+      });
+    }
+
+    function handleInput(evt) {
+      const field = evt.target.dataset.field;
+      if (!field) return;
+      const value = Number(evt.target.value);
+      if (Number.isFinite(value)) {
+        state[field] = value;
+        syncControlDisplays();
+      }
+    }
+
+    document.querySelectorAll('[data-field]').forEach((input) => {
+      input.addEventListener('input', handleInput);
+      input.addEventListener('change', handleInput);
+    });
+
+    function buildQuery() {
+      const params = new URLSearchParams();
+      const kwp = panelsToKWp(state.panelCount);
+      params.set('arrayKWp', kwp.toFixed(3));
+      Object.entries(queryKeys).forEach(([stateKey, queryKey]) => {
+        const val = state[stateKey];
+        if (val !== undefined && val !== null && val !== '') {
+          params.set(queryKey, val);
+        }
+      });
+      return params.toString();
+    }
+
+    function renderCard(label, value) {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `
+        <span class="card-label">${label}</span>
+        <span class="card-value">${value}</span>
+      `;
+      grid.appendChild(card);
+    }
+
+    function renderSummary(data) {
+      const { annualSavingsGBP, estimatedInstallCostGBP } = data;
+      if (annualSavingsGBP === undefined || estimatedInstallCostGBP === undefined) {
+        summaryEl.textContent = '';
+        return;
+      }
+      const formatCurrency = formatters.currency;
+      const payback = annualSavingsGBP > 0 ? (estimatedInstallCostGBP / annualSavingsGBP) : Infinity;
+      const paybackText = Number.isFinite(payback)
+        ? `${payback.toFixed(1)} year payback`
+        : 'Payback not reached with current assumptions.';
+      summaryEl.textContent = `${formatCurrency(annualSavingsGBP)} projected annual saving • Estimated install ${formatCurrency(estimatedInstallCostGBP)} • ${paybackText}`;
+    }
+
+    function formatIrradiance(value) {
+      return `${nfEnergy.format(Math.round(value))} kWh/m²`;
+    }
+
+    function renderSolarStory(story) {
+      if (!story) {
+        storyHighlightsEl.innerHTML = '<p>Adjust the inputs to view site irradiance, tilt, and seasonal profile.</p>';
+        storyChartEl.innerHTML = '';
+        storyCaptionEl.textContent = '';
+        return;
+      }
+
+      const highlightData = [
+        { label: 'Latitude', value: `${story.latitudeDeg.toFixed(1)}°N`, desc: 'Sets seasonal solar angle.' },
+        { label: 'Panel tilt', value: `${story.tiltDeg}°`, desc: 'Optimised for the site latitude.' },
+        { label: 'Annual GHI', value: formatIrradiance(story.annualGHIkWhm2), desc: 'Irradiance on a flat surface.' },
+        { label: 'Annual DHI', value: formatIrradiance(story.annualDHIkWhm2), desc: 'Diffuse contribution from sky and reflections.' },
+        { label: 'Plane-of-array', value: formatIrradiance(story.annualPOA_kWhm2), desc: 'Expected irradiance on the mounted panels.' },
+        { label: 'Avg sunset angle', value: `${story.avgSunsetHourAngleDeg}°`, desc: 'Half the daylight span from sunrise to sunset.' }
+      ];
+
+      storyHighlightsEl.innerHTML = highlightData.map((item) => `
+        <article class="story-highlight">
+          <h3>${item.label}</h3>
+          <strong>${item.value}</strong>
+          <span>${item.desc}</span>
+        </article>
+      `).join('');
+
+      const monthly = story.monthly || [];
+      const maxMonthly = monthly.reduce((max, m) => Math.max(max, m.ghiMonthly || 0), 1);
+      if (monthly.length === 0) {
+        storyChartEl.innerHTML = '<p>Solar data required to render the monthly profile.</p>';
+        storyCaptionEl.textContent = '';
+        return;
+      }
+
+      storyChartEl.innerHTML = monthly.map((m) => {
+        const beam = Math.max(0, (m.ghiMonthly || 0) - (m.dhiMonthly || 0));
+        const diffuseHeight = ((m.dhiMonthly || 0) / maxMonthly) * 100;
+        const beamHeight = (beam / maxMonthly) * 100;
+        const tooltip = `${m.monthLabel}: ${formatIrradiance(m.ghiMonthly)} (GHI), ${formatIrradiance(m.dhiMonthly)} (DHI)`;
+        return `
+          <div class="month-bar" title="${tooltip}">
+            <div class="bar-stack">
+              <div class="bar-segment beam" style="height:${beamHeight}%"></div>
+              <div class="bar-segment diffuse" style="height:${diffuseHeight}%"></div>
+            </div>
+            <div>${m.monthLabel}</div>
+            <div class="sunset-angle">${m.sunsetHourAngleDeg}&deg; sunset angle</div>
+          </div>
+        `;
+      }).join('');
+
+      const brightest = monthly.reduce((best, m) => (m.ghiMonthly > best.ghiMonthly ? m : best), monthly[0]);
+      storyCaptionEl.textContent = `${brightest.monthLabel} shows the strongest resource at ${formatIrradiance(brightest.ghiMonthly)} with sunsets around ${brightest.sunsetHourAngleDeg}°. Green indicates direct beam; blue shows diffuse contribution.`;
+    }
+
+    async function fetchEstimateData(query) {
+      let lastError = null;
+      for (const base of buildApiTargets()) {
+        const url = buildEstimateURL(base, query);
+        try {
+          const res = await fetch(url);
+          if (!res.ok) {
+            lastError = new Error(`HTTP ${res.status} from ${base || 'same origin'}`);
+            continue;
+          }
+          return res.json();
+        } catch (err) {
+          lastError = err;
+        }
+      }
+      throw lastError || new Error('Estimate endpoint unreachable');
+    }
+
+    async function loadEstimate(trigger = 'auto') {
+      const query = buildQuery();
+      const labelMap = { auto: 'Fetching latest estimate…', user: 'Updating scenario…', surprise: 'Generating a sample scenario…' };
+      statusEl.textContent = labelMap[trigger] || 'Running calculation…';
+      actionBtn.disabled = true;
+      randomBtn.disabled = true;
+      try {
+        const data = await fetchEstimateData(query);
+        grid.innerHTML = '';
+        fields.forEach(({ key, label, format, suffix = '' }) => {
+          const raw = data[key];
+          const formatter = formatters[format] || ((v) => v);
+          const value = raw === undefined ? '—' : formatter(raw) + suffix;
+          renderCard(label, value);
+        });
+        renderSummary(data);
+        renderSolarStory(data.solarStory);
+        statusEl.textContent = `Site profile: ${data.companyLoadProfile?.name || 'Not specified'} • Demand cap applied: ${formatters.bool(data.demandCapApplied)}`;
+      } catch (err) {
+        console.error('Failed to load /estimate', err);
+        const hint = err && err.message ? err.message : 'Unknown browser error';
+        statusEl.innerHTML = `Could not reach <code>/estimate</code>. Ensure <code>node main.js</code> is running on this origin or localhost:3000.<br><small>${hint}</small>`;
+        summaryEl.textContent = '';
+        renderSolarStory(null);
+      } finally {
+        actionBtn.disabled = false;
+        randomBtn.disabled = false;
+      }
+    }
+
+    function randomiseValues() {
+      state.panelCount = Math.floor(Math.random() * 497) + 4;
+      state.importRate = (Math.random() * 0.35 + 0.15).toFixed(3) * 1;
+      state.maintenancePerKWp = Math.floor(Math.random() * 41);
+      state.installPerKWp = Math.floor(Math.random() * 61) * 25 + 500;
+      state.demand = Math.floor((Math.random() * 900 + 100) * 1000);
+      document.querySelectorAll('[data-field]').forEach((input) => {
+        const field = input.dataset.field;
+        if (state[field] !== undefined) {
+          input.value = state[field];
+        }
+      });
+      syncControlDisplays();
+      loadEstimate('surprise');
+    }
+
+    actionBtn.addEventListener('click', () => loadEstimate('user'));
+    randomBtn.addEventListener('click', () => randomiseValues());
+
+    cycleTagline();
+    syncControlDisplays();
+    loadEstimate();
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "energy-saver-professional",
+  "version": "1.0.0",
+  "description": "PV annual electricity savings calculator",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "dev": "node main.js"
+  },
+  "keywords": ["solar", "pv", "energy", "savings"],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
+
